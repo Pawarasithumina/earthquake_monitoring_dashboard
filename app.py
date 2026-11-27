@@ -284,12 +284,33 @@ def main():
         if not map_data.empty:
             map_data["map_size"]=map_data["magnitude"].fillna(0).clip(.1,7)
             map_data=map_data.nlargest(3000,"map_size")
-            map_fig=px.scatter_map(
+            # Use Plotly's built-in Natural Earth geography rather than external map tiles.
+            # This guarantees visible continents, country borders and island coastlines.
+            map_fig=px.scatter_geo(
                 map_data,lat="latitude",lon="longitude",color="magnitude",size="map_size",
-                hover_name="place",hover_data={"event_time":True,"depth_km":True,"event_id":True,"latitude":False,"longitude":False,"map_size":False},
-                color_continuous_scale=["#55d6e8","#f4bd65","#ff5c68"],zoom=0,height=570,map_style="carto-darkmatter",
+                hover_name="place",
+                hover_data={"event_time":True,"depth_km":True,"event_id":True,
+                            "latitude":":.3f","longitude":":.3f","map_size":False},
+                color_continuous_scale=["#55d6e8","#f4bd65","#ff5c68"],
+                projection="natural earth",height=570,
             )
-            map_fig.update_layout(template="plotly_dark",paper_bgcolor="rgba(0,0,0,0)",margin=dict(l=0,r=0,t=0,b=0))
+            map_fig.update_geos(
+                showland=True,landcolor="#183247",
+                showocean=True,oceancolor="#071725",
+                showcountries=True,countrycolor="rgba(137,180,205,.48)",
+                showcoastlines=True,coastlinecolor="#65a9c2",
+                showlakes=True,lakecolor="#0b2031",
+                showrivers=False,
+                bgcolor="rgba(0,0,0,0)",
+                showframe=False,
+                lataxis_showgrid=True,lataxis_gridcolor="rgba(122,166,190,.12)",
+                lonaxis_showgrid=True,lonaxis_gridcolor="rgba(122,166,190,.12)",
+            )
+            map_fig.update_layout(
+                template="plotly_dark",paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",margin=dict(l=0,r=0,t=0,b=0),
+                coloraxis_colorbar=dict(title="Magnitude",tickfont=dict(color="#b9ccda")),
+            )
             st.plotly_chart(map_fig,use_container_width=True)
             st.caption("Map displays up to 3,000 filtered events, prioritising larger magnitudes.")
         else: st.info("No locations match the selected filters.")
